@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/alexbrainman/odbc"
+	"time"
 )
 
 var connFormatter string
@@ -27,11 +28,14 @@ func init() {
 func GetConn(config *MSSqlConfig) (*sql.DB, error) {
 	var conn *sql.DB
 	connString := getConnStr(config)
-	if _, ok := dbMap[connString]; ok {
+	_, ok := dbMap[connString]
+	fmt.Println(ok)
+	if ok {
 		conn = dbMap[connString]
 		if IsValid(conn) {
 			return conn, nil
 		} else {
+			fmt.Println("delete " + connString)
 			delete(dbMap, connString)
 			return GetConn(config)
 		}
@@ -52,7 +56,7 @@ func getConnStr(config *MSSqlConfig) string {
 //根据配置获取数据库连接
 func getConn(connString string) (*sql.DB, error) {
 	conn, err := sql.Open("odbc", connString)
-	//fmt.Println(connString)
+	fmt.Println(connString)
 	if err != nil {
 		return nil, err
 	}
@@ -62,9 +66,9 @@ func getConn(connString string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	//conn.SetMaxIdleConns(30)
-	//conn.SetMaxOpenConns(30)
-	//conn.SetConnMaxLifetime(time.Second * 60 * 10)
+	conn.SetMaxIdleConns(30)
+	conn.SetMaxOpenConns(30)
+	conn.SetConnMaxLifetime(time.Second * 180)
 	return conn, nil
 }
 
