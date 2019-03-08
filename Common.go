@@ -29,13 +29,11 @@ func GetConn(config *MSSqlConfig) (*sql.DB, error) {
 	var conn *sql.DB
 	connString := getConnStr(config)
 	_, ok := dbMap[connString]
-	fmt.Println(ok)
 	if ok {
 		conn = dbMap[connString]
 		if IsValid(conn) {
 			return conn, nil
 		} else {
-			fmt.Println("delete " + connString)
 			delete(dbMap, connString)
 			return GetConn(config)
 		}
