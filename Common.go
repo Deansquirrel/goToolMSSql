@@ -3,7 +3,8 @@ package goToolMSSql
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/alexbrainman/odbc"
+	//_ "github.com/alexbrainman/odbc"
+	_ "github.com/denisenkom/go-mssqldb"
 	"time"
 )
 
@@ -25,25 +26,26 @@ type MSSqlConfig struct {
 
 func init() {
 	dbMap = make(map[string]*sql.DB)
-	connFormatter = "Driver={SQL Server};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s;Network=DbMsSoCn;"
+	//connFormatter = "Driver={SQL Server};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s;Network=DbMsSoCn;"
+	connFormatter = "server=%s;port=%d;database=%s;user id=%s;password=%s;encrypt=disable"
 	SetMaxIdleConn(15)
 	SetMaxOpenConn(15)
 	SetMaxLifetime(time.Second * 180)
 }
 
-func SetMaxIdleConn(n int){
+func SetMaxIdleConn(n int) {
 	if n > 0 {
 		maxIdleConn = n
 	}
 }
 
-func SetMaxOpenConn(n int){
+func SetMaxOpenConn(n int) {
 	if n > 0 {
 		maxOpenConn = n
 	}
 }
 
-func SetMaxLifetime(d time.Duration){
+func SetMaxLifetime(d time.Duration) {
 	maxLifetime = d
 }
 
@@ -77,7 +79,8 @@ func getConnStr(config *MSSqlConfig) string {
 
 //根据配置获取数据库连接
 func getConn(connString string) (*sql.DB, error) {
-	conn, err := sql.Open("odbc", connString)
+	//conn, err := sql.Open("odbc", connString)
+	conn, err := sql.Open("mssql", connString)
 	fmt.Println(connString)
 	if err != nil {
 		return nil, err
