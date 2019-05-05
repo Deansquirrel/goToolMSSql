@@ -126,7 +126,7 @@ func GetConn2000(config *MSSqlConfig) (*sql.DB, error) {
 			return conn, nil
 		} else {
 			delete(dbMap, connString)
-			return GetConn(config)
+			return GetConn2000(config)
 		}
 	}
 	conn, err := getConn2000(connString)
@@ -134,7 +134,7 @@ func GetConn2000(config *MSSqlConfig) (*sql.DB, error) {
 		return nil, err
 	}
 	dbMap[connString] = conn
-	return GetConn(config)
+	return GetConn2000(config)
 }
 
 //获取连接字符串
