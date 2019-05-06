@@ -3,12 +3,12 @@ package goToolMSSql
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/alexbrainman/odbc"
 	_ "github.com/denisenkom/go-mssqldb"
 	"time"
 )
 
-//var connFormatter string
+//MSSql连接工具
+//不支持SQL2000
 
 var dbMap map[string]*sql.DB
 
@@ -25,14 +25,11 @@ type MSSqlConfig struct {
 }
 
 const (
-	connFormatter     = "server=%s;port=%d;database=%s;user id=%s;password=%s;encrypt=disable"
-	connFormatter2000 = "Driver={SQL Server};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s;Network=DbMsSoCn;"
+	connFormatter = "server=%s;port=%d;database=%s;user id=%s;password=%s;encrypt=disable"
 )
 
 func init() {
 	dbMap = make(map[string]*sql.DB)
-	//connFormatter = "Driver={SQL Server};Server=%s,%d;Database=%s;Uid=%s;Pwd=%s;Network=DbMsSoCn;"
-	//connFormatter = "server=%s;port=%d;database=%s;user id=%s;password=%s;encrypt=disable"
 	SetMaxIdleConn(15)
 	SetMaxOpenConn(15)
 	SetMaxLifetime(time.Second * 180)
@@ -61,7 +58,6 @@ func GetConn(config *MSSqlConfig) (*sql.DB, error) {
 	_, ok := dbMap[connString]
 	if ok {
 		conn = dbMap[connString]
-		//return conn, nil
 		if IsValid(conn) {
 			return conn, nil
 		} else {
@@ -84,7 +80,6 @@ func getConnStr(config *MSSqlConfig) string {
 
 //根据配置获取数据库连接
 func getConn(connString string) (*sql.DB, error) {
-	//conn, err := sql.Open("odbc", connString)
 	conn, err := sql.Open("mssql", connString)
 	fmt.Println(connString)
 	if err != nil {
@@ -112,52 +107,4 @@ func IsValid(db *sql.DB) bool {
 		}
 	}
 	return false
-}
-
-//根据配置获取数据库连接
-func GetConn2000(config *MSSqlConfig) (*sql.DB, error) {
-	var conn *sql.DB
-	connString := getConnStr2000(config)
-	_, ok := dbMap[connString]
-	if ok {
-		conn = dbMap[connString]
-		//return conn, nil
-		if IsValid(conn) {
-			return conn, nil
-		} else {
-			delete(dbMap, connString)
-			return GetConn2000(config)
-		}
-	}
-	conn, err := getConn2000(connString)
-	if err != nil {
-		return nil, err
-	}
-	dbMap[connString] = conn
-	return GetConn2000(config)
-}
-
-//获取连接字符串
-func getConnStr2000(config *MSSqlConfig) string {
-	return fmt.Sprintf(connFormatter2000, config.Server, config.Port, config.DbName, config.User, config.Pwd)
-}
-
-//根据配置获取数据库连接
-func getConn2000(connString string) (*sql.DB, error) {
-	conn, err := sql.Open("odbc", connString)
-	fmt.Println(connString)
-	if err != nil {
-		return nil, err
-	}
-
-	err = conn.Ping()
-	if err != nil {
-		return nil, err
-	}
-
-	conn.SetMaxIdleConns(maxIdleConn)
-	conn.SetMaxOpenConns(maxOpenConn)
-	conn.SetConnMaxLifetime(maxLifetime)
-
-	return conn, nil
 }
