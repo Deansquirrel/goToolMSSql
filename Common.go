@@ -2,7 +2,9 @@ package goToolMSSql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"github.com/Deansquirrel/goToolCommon"
 	_ "github.com/denisenkom/go-mssqldb"
 	"time"
 )
@@ -10,11 +12,11 @@ import (
 //MSSql连接工具
 //不支持SQL2000
 
-var dbMap map[string]*sql.DB
-
 var maxIdleConn int
 var maxOpenConn int
 var maxLifetime time.Duration
+
+var dbCache goToolCommon.IObjectManager
 
 type MSSqlConfig struct {
 	Server string
@@ -29,7 +31,8 @@ const (
 )
 
 func init() {
-	dbMap = make(map[string]*sql.DB)
+	dbCache = goToolCommon.NewObjectManager()
+
 	SetMaxIdleConn(15)
 	SetMaxOpenConn(15)
 	SetMaxLifetime(time.Second * 180)
@@ -55,13 +58,15 @@ func SetMaxLifetime(d time.Duration) {
 func GetConn(config *MSSqlConfig) (*sql.DB, error) {
 	var conn *sql.DB
 	connString := getConnStr(config)
-	_, ok := dbMap[connString]
-	if ok {
-		conn = dbMap[connString]
+	if dbCache.IsClosed() {
+		return nil, errors.New("dbCache is closed")
+	}
+	if dbCache.HasId(connString) {
+		conn := dbCache.GetObject(connString).(*sql.DB)
 		if IsValid(conn) {
 			return conn, nil
 		} else {
-			delete(dbMap, connString)
+			dbCache.Unregister() <- connString
 			return GetConn(config)
 		}
 	}
@@ -69,7 +74,7 @@ func GetConn(config *MSSqlConfig) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbMap[connString] = conn
+	dbCache.Register() <- goToolCommon.NewObject(connString, conn)
 	return GetConn(config)
 }
 
